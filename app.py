@@ -174,11 +174,15 @@ if not st.session_state.pipeline_run:
                 image_bytes = uploaded_file.getvalue()
                 st.session_state.uploaded_image_bytes = image_bytes
                 
-                img = Image.open(io.BytesIO(image_bytes))
-                if img.mode != 'RGB':
-                    img = img.convert('RGB')
-                    
-                img.save(temp_path, format="JPEG")
+                try:
+                    img = Image.open(io.BytesIO(image_bytes))
+                    if img.mode != 'RGB':
+                        img = img.convert('RGB')
+                        
+                    img.save(temp_path, format="JPEG")
+                except Exception as img_err:
+                    st.error("🚨 Invalid Image Format: The file you uploaded cannot be read as an image. It might be corrupted or an unsupported format (like a WEBP saved as a JPG). Please try a different image.")
+                    st.stop()
                     
                 with st.spinner("EcoSentinel modules analyzing..."):
                     final_state = run_pipeline(temp_path, zone, bundled_notes)
