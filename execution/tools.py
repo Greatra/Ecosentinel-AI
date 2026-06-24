@@ -22,13 +22,11 @@ def analyze_image_vision(image_path: str, context_notes: str) -> str:
         
     from langchain_nvidia_ai_endpoints import ChatNVIDIA
     llm = ChatNVIDIA(
-        model="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+        model="nvidia/llama-3.2-90b-vision-instruct",
         api_key=api_key,
-        temperature=0.6,
+        temperature=0.1,
         top_p=0.95,
-        max_tokens=1024,
-        reasoning_budget=512,
-        chat_template_kwargs={"enable_thinking":True}
+        max_tokens=1024
     )
     
     prompt = f"""Adopt the role of a Meta-Cognitive Reasoning Expert for Environmental Analysis.
