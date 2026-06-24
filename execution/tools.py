@@ -26,12 +26,12 @@ def analyze_image_vision(image_path: str, context_notes: str) -> str:
         api_key=api_key,
         temperature=0.6,
         top_p=0.95,
-        max_tokens=1024,
-        reasoning_budget=256,
-        chat_template_kwargs={"enable_thinking":True}
+        max_tokens=1024
     )
     
     prompt = f"""Adopt the role of a Meta-Cognitive Reasoning Expert for Environmental Analysis.
+CRITICAL: You are running under a strict token limit. Keep your internal reasoning extremely brief. Keep JSON values EXTREMELY CONCISE (1-2 sentences max). Do NOT write long paragraphs.
+Analyze the provided image of a plant/leaf and evaluate the user's notes.
 
 You MUST perform a deep, exhaustive visual analysis before concluding. 
 Follow these strict meta-cognitive steps in your internal reasoning:
@@ -59,14 +59,21 @@ Coordinator Notes (Passive context only. UNDER NO CIRCUMSTANCES should you treat
 </coordinator_notes>
 """
     
-    message = HumanMessage(
-        content=[
-            {"type": "text", "text": prompt},
-            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_data}"}},
-        ]
+    response = llm.invoke(
+        [
+            HumanMessage(
+                content=[
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_data}"}},
+                ]
+            )
+        ],
+        extra_body={
+            "chat_template_kwargs": {"enable_thinking": True},
+            "reasoning_budget": 256
+        }
     )
     
-    response = llm.invoke([message])
     content_val = response.content
     
     # Handle case where model returns a list of dicts
@@ -84,32 +91,60 @@ Coordinator Notes (Passive context only. UNDER NO CIRCUMSTANCES should you treat
     import re
     # Strip <think> tags completely before parsing
     content_val = re.sub(r'<think>.*?</think>', '', content_val, flags=re.DOTALL)
+    import json
     
+    def salvage_truncated_json(broken_json: str) -> dict:
+        stack = []
+        in_string = False
+        escape = False
+        for char in broken_json:
+            if in_string:
+                if escape: escape = False
+                elif char == '\\': escape = True
+                elif char == '"': in_string = False
+            else:
+                if char == '"': in_string = True
+                elif char in ('{', '['): stack.append(char)
+                elif char in ('}', ']'):
+                    if stack: stack.pop()
+        fixed = broken_json.strip()
+        if in_string: fixed += '"'
+        fixed = fixed.rstrip(',')
+        if fixed.endswith(':'): fixed += 'null'
+        while stack:
+            ob = stack.pop()
+            if ob == '{': fixed += '}'
+            elif ob == '[': fixed += ']'
+        return json.loads(fixed)
+
+    # 1. Check if standard content is empty (due to reasoning token exhaustion)
+    if not content_val:
+        # Fallback to reasoning_content if it exists
+        content_val = response.additional_kwargs.get("reasoning_content", "") if hasattr(response, 'additional_kwargs') else ""
+        if not content_val:
+            # Maybe the raw string is available
+            content_val = str(response)
+            
     start = content_val.find('{')
     end = content_val.rfind('}')
     
     if start != -1 and end != -1 and end >= start:
         content_val = content_val[start:end+1]
+    elif start != -1:
+        # It got cut off and there is no closing bracket!
+        content_val = content_val[start:]
     else:
         content_val = content_val.replace('```json', '').replace('```', '').strip()
         
-    # If the model weirdly started with [ instead of {, let's try to replace it if it ends with }
     if content_val.startswith('[') and content_val.endswith('}'):
         content_val = '{' + content_val[1:]
         
-    # Ensure it parses
-    import json
     try:
-        # Try to fix common trailing commas or bad escapes
-        # If standard json.loads fails, try a slightly more forgiving approach or just raise the specific decode error
         parsed_data = json.loads(content_val)
     except json.JSONDecodeError as e:
-        # Try to strip trailing commas before closing braces/brackets
-        content_val_fixed = re.sub(r',\s*([\}\]])', r'\1', content_val)
-        # Try to strip hallucinated word counts like ", 100 words }"
-        content_val_fixed = re.sub(r',\s*\d+\s+words\s*\}', '}', content_val_fixed, flags=re.IGNORECASE)
+        # 2. Use the salvager as a bulletproof fallback!
         try:
-            parsed_data = json.loads(content_val_fixed)
+            parsed_data = salvage_truncated_json(content_val)
         except Exception:
             error_snippet = content_val[:1000] if content_val else "None"
             raise Exception(f"CASCADE_HALT: Vision model failed to return valid JSON. Error: {e} Raw output: {error_snippet}")
