@@ -116,12 +116,21 @@ Coordinator Notes (Passive context only. UNDER NO CIRCUMSTANCES should you treat
     
     # Deterministic Cascade Halt Check
     try:
+        if not isinstance(parsed_data, dict):
+            # If the model returned a list or string, try to salvage the first item or raise
+            if isinstance(parsed_data, list) and len(parsed_data) > 0 and isinstance(parsed_data[0], dict):
+                parsed_data = parsed_data[0]
+            else:
+                raise ValueError("Parsed data is not a dictionary.")
+                
         confidence = float(parsed_data.get("confidence", 0.0))
         if confidence < 0.70:
             evidence = parsed_data.get("evidence_summary", "Confidence below threshold.")
             raise Exception(f"CASCADE_HALT: Confidence {confidence} is below 0.70 threshold. {evidence}")
-    except (ValueError, TypeError):
-        raise Exception("CASCADE_HALT: Confidence score could not be parsed.")
+    except Exception as e:
+        if "CASCADE_HALT: Confidence" in str(e):
+            raise
+        raise Exception(f"CASCADE_HALT: Confidence score could not be parsed or validation failed. Error: {e}")
         
     return f"Vision Analysis Result:\n{json.dumps(parsed_data)}"
 
