@@ -17,8 +17,17 @@ def analyze_image_vision(image_path: str, context_notes: str) -> str:
     if not api_key:
         raise Exception("Vision Analysis Error: NVIDIA_API_KEY missing.")
         
-    with open(image_path, "rb") as image_file:
-        image_data = base64.b64encode(image_file.read()).decode('utf-8')
+    from PIL import Image
+    import io
+    
+    with Image.open(image_path) as img:
+        # Resize to max 512x512 to prevent token exhaustion
+        img.thumbnail((512, 512))
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        buffer = io.BytesIO()
+        img.save(buffer, format="JPEG", quality=70)
+        image_data = base64.b64encode(buffer.getvalue()).decode("utf-8")
         
     from langchain_nvidia_ai_endpoints import ChatNVIDIA
     llm = ChatNVIDIA(
