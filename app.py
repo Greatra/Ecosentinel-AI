@@ -195,7 +195,7 @@ else:
     st.markdown("## 📊 Coordinator Decision Support")
     
     if state.get("app_fatal_error") and "CASCADE_HALT" not in state.get("app_fatal_error"):
-        st.error("🚨 Analysis could not be completed. Please check your connection and try again.")
+        st.error(f"🚨 Analysis could not be completed. Error details: {state.get('app_fatal_error')}")
     elif state.get("human_review_required") or (state.get("app_fatal_error") and "CASCADE_HALT" in state.get("app_fatal_error")):
         # The Failure Cascade Triggered
         error_msg = state.get('evidence_summary', state.get('app_fatal_error', 'Information unavailable'))
