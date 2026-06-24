@@ -168,10 +168,17 @@ if not st.session_state.pipeline_run:
             # Save uploaded file to temp path for Vision Analyst
             temp_path = f"temp_upload_{uuid.uuid4().hex}.jpg"
             try:
-                with open(temp_path, "wb") as f:
-                    image_bytes = uploaded_file.getvalue()
-                    f.write(image_bytes)
-                    st.session_state.uploaded_image_bytes = image_bytes
+                from PIL import Image
+                import io
+                
+                image_bytes = uploaded_file.getvalue()
+                st.session_state.uploaded_image_bytes = image_bytes
+                
+                img = Image.open(io.BytesIO(image_bytes))
+                if img.mode != 'RGB':
+                    img = img.convert('RGB')
+                    
+                img.save(temp_path, format="JPEG")
                     
                 with st.spinner("EcoSentinel modules analyzing..."):
                     final_state = run_pipeline(temp_path, zone, bundled_notes)
