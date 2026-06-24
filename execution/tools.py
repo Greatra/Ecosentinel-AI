@@ -26,8 +26,8 @@ def analyze_image_vision(image_path: str, context_notes: str) -> str:
         api_key=api_key,
         temperature=0.6,
         top_p=0.95,
-        max_tokens=8192,
-        reasoning_budget=4096,
+        max_tokens=1024,
+        reasoning_budget=512,
         chat_template_kwargs={"enable_thinking":True}
     )
     
