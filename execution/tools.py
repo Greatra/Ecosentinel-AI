@@ -247,14 +247,15 @@ Treatment: {recommendations}
 
 You must embed your final Responsible AI review inside the JSON output.
     
+CRITICAL: You are running under a strict token limit. Keep all values EXTREMELY CONCISE (1-2 short sentences max). Do NOT write long paragraphs or you will be cut off!
 Schema:
 {{
   "status": "Safe or Warning - Hazardous recommendations detected",
-  "pollinator_risk": "None identified or detailed risk description",
+  "pollinator_risk": "Short description of risks.",
   "human_oversight": "Mandatory for all physical interventions",
-  "responsible_ai_review": "Your Clear Answer synthesis of the safety risks",
+  "responsible_ai_review": "Short review of AI recommendation.",
   "confidence_level": "0.0 to 1.0",
-  "key_caveats": "Any key caveats or weaknesses in the treatment plan"
+  "key_caveats": "Short caveats."
 }}
 """
     
@@ -286,6 +287,7 @@ def generate_executive_summary_nemotron(state_summary: str) -> str:
     {state_summary}
     
     Schema:
+    CRITICAL: You are running under a strict token limit. Keep all values EXTREMELY CONCISE (1-2 short sentences max). Do NOT write long paragraphs or you will be cut off!
     {{
       "current_situation": "Single concise sentence describing the detected pest/disease.",
       "immediate_actions": ["Top 3 most important immediate actions", "Action 2", "Action 3"],
