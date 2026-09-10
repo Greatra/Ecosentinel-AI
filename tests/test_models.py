@@ -1,3 +1,5 @@
+import sys, os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import os
 import time
 from dotenv import load_dotenv
@@ -26,3 +28,4 @@ for m in models:
     except Exception as e:
         elapsed = time.time() - start_time
         print(f"FAILED after {elapsed:.2f}s! Error: {e}")
+

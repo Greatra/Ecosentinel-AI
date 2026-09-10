@@ -1,3 +1,5 @@
+import sys, os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import os
 import json
 from dotenv import load_dotenv
@@ -25,3 +27,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

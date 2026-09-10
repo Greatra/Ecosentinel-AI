@@ -1,3 +1,5 @@
+import sys, os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import os
 from orchestrator import run_ecosentinel_agent
 import logging
@@ -22,3 +24,4 @@ if __name__ == "__main__":
     finally:
         if os.path.exists(dummy_image):
             os.remove(dummy_image)
+

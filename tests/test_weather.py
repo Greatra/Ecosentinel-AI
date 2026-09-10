@@ -1,5 +1,8 @@
+import sys, os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import requests
 location_name = "Austin, Texas"
 geocode_url = "https://geocoding-api.open-meteo.com/v1/search"
 geo_resp = requests.get(geocode_url, params={"name": location_name, "count": 1, "format": "json"}, timeout=5)
 print(geo_resp.json())
+

@@ -1,8 +1,9 @@
+import sys, os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import os
 from dotenv import load_dotenv
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
 from langchain_core.messages import HumanMessage
-import concurrent.futures
 
 load_dotenv(override=True)
 
@@ -24,8 +25,8 @@ models_to_test = [
     }
 ]
 
-def test_model(m):
-    print(f"Starting {m['name']}...")
+for m in models_to_test:
+    print(f"Testing {m['name']}...")
     try:
         client = ChatNVIDIA(
             model=m["model"],
@@ -33,11 +34,7 @@ def test_model(m):
             temperature=0.1
         )
         res = client.invoke([HumanMessage(content="Hello! Please reply 'OK'.")])
-        return f"SUCCESS {m['name']}: {res.content}"
+        print(f"SUCCESS {m['name']}: {res.content}")
     except Exception as e:
-        return f"FAILED {m['name']}: {type(e).__name__} - {e}"
+        print(f"FAILED {m['name']}: {type(e).__name__} - {e}")
 
-with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-    futures = [executor.submit(test_model, m) for m in models_to_test]
-    for future in concurrent.futures.as_completed(futures):
-        print(future.result())
